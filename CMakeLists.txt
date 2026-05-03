@@ -5,5 +5,12 @@ project(Mini_STL CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# Find GoogleTest
+find_package(GTest CONFIG REQUIRED)
+include_directories(${GTEST_INCLUDE_DIRS})
 
-add_subdirectory(tests)
+# Core Library (static)
+
+
+# Tests
+add_subdirectory(tests/)
