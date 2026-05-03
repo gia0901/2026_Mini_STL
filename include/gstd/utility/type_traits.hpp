@@ -119,4 +119,46 @@ namespace gstd {
         std::cout << "forward(rvalue)" << std::endl;
         return static_cast<T&&>(arg);
     }
+
+    // =========================================================
+    // 4. swap
+    // =========================================================
+    template<typename T>
+    void swap(T& a, T& b) {
+        T temp = move(a);
+        a = move(b);
+        b = move(temp);
+    }
+
+    // =========================================================
+    // 5. pair
+    // =========================================================
+    template<typename T1, typename T2>
+    struct pair {
+        T1 first;
+        T2 second;
+
+        // default constructor
+        pair() = default;
+
+        // parameterized constructor
+        pair(const T1& a, const T2& b) : first(a), second(b) {}
+
+        // template constructor for perfect forwarding
+        // - dùng forward để chỉ cast nếu a, b là rvalue, giữ nguyên tính chất nếu a,b là lvalue (tránh bị move ngoài ý muốn)
+        // - ví dụ: pair<std::string, std::string> p("str_a" , "str_b");
+        template<typename U1, typename U2>
+        pair(U1&& a, U2&& b) : first(forward<U1>(a)), second(forward<U2>(b)) {}
+
+        // defaults
+        pair(const pair&) = default;
+        pair(pair&&) = default;
+        pair& operator=(const pair&) = default;
+        pair& operator=(pair&&) = default;
+    };
+
+    // =========================================================
+    // 6. iterator_traits
+    // =========================================================
+
 }
