@@ -24,3 +24,49 @@ TEST(TypeTraitsTest, Forward) {
     ASSERT_TRUE((std::is_same<decltype(gstd::forward<std::string>(gstd::move(x))), std::string&&>::value));
     ASSERT_TRUE((std::is_same<decltype(gstd::forward<std::string>("Hello")), std::string&&>::value));
 }   
+
+TEST(TypeTraitsTest, Swap) {
+    int x = 10;
+    int y = 20;
+    gstd::swap(x, y);
+    ASSERT_EQ(x, 20);
+    ASSERT_EQ(y, 10);
+
+    std::string str1 = "Hello";
+    std::string str2 = "World";
+    gstd::swap(str1, str2);
+    ASSERT_EQ(str1, "World");
+    ASSERT_EQ(str2, "Hello");
+}
+
+TEST(TypeTraitsTest, Pair) {
+    std::string str1 = "Hello";
+    std::string str2 = "World";
+    gstd::pair<std::string, std::string> p1(str1, str2);
+
+    ASSERT_EQ(p1.first, "Hello");
+    ASSERT_EQ(p1.second, "World");
+    
+    gstd::pair<std::string, std::string> p2(gstd::move(str1), gstd::move(str2));
+
+    ASSERT_EQ(p2.first, "Hello");
+    ASSERT_EQ(p2.second, "World");
+
+    gstd::pair<int, std::string> p3(1, "Hello");
+    ASSERT_EQ(p3.first, 1);
+    ASSERT_EQ(p3.second, "Hello");
+}
+
+TEST(TypeTraitsTest, PairSwap) {
+    int a = 10, b = 20;
+    int c = 30, d = 40;
+
+    gstd::pair<int, int> p1(a, b);
+    gstd::pair<int, int> p2(c, d);
+
+    p1.swap(p2);
+    ASSERT_EQ(p1.first, 30);
+    ASSERT_EQ(p1.second, 40);
+    ASSERT_EQ(p2.first, 10);
+    ASSERT_EQ(p2.second, 20);
+}

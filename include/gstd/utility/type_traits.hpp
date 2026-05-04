@@ -1,5 +1,4 @@
 #pragma once
-#include <iostream>
 
 namespace gstd {
     // =========================================================
@@ -60,9 +59,11 @@ namespace gstd {
     // remove_reference_t<T> giúp bỏ & nếu có
     //
     // Sau đó ép về kiểu: T&& (rvalue reference)
+    // In modern C++ (C++14 onwards), utilities like move, forward, and swap are typically constexpr so they can be evaluated at compile time.
+    // Noexcept được sử dụng để báo cho compiler biết rằng hàm này không ném ra exception.
     //
     template<typename T>
-    remove_reference_t<T>&& move(T&& arg) noexcept {
+    constexpr remove_reference_t<T>&& move(T&& arg) noexcept {
         // Ví dụ:
         // Nếu T = int&  → remove_reference_t<T> = int
         // ReturnType = int&&
@@ -100,13 +101,12 @@ namespace gstd {
 
     // Case 1: arg là lvalue
     template<typename T>
-    T&& forward(remove_reference_t<T>& arg) noexcept {
+    constexpr T&& forward(remove_reference_t<T>& arg) noexcept {
         // Nếu T = int&
         // return int& && -> collapse thành int&
         
         // Nếu T = int
         // return int&&
-        std::cout << "forward(lvalue)" << std::endl;
         return static_cast<T&&>(arg);
     }
 
@@ -115,8 +115,7 @@ namespace gstd {
     //        gstd::forward<std::string>(gstd::move(str))   -> T = std::string
 
     template<typename T>
-    T&& forward(remove_reference_t<T>&& arg) noexcept {
-        std::cout << "forward(rvalue)" << std::endl;
+    constexpr T&& forward(remove_reference_t<T>&& arg) noexcept {
         return static_cast<T&&>(arg);
     }
 
@@ -124,10 +123,10 @@ namespace gstd {
     // 4. swap
     // =========================================================
     template<typename T>
-    void swap(T& a, T& b) {
-        T temp = move(a);
-        a = move(b);
-        b = move(temp);
+    constexpr void swap(T& a, T& b) noexcept {
+        T temp = gstd::move(a);
+        a = gstd::move(b);
+        b = gstd::move(temp);
     }
 
     // =========================================================
@@ -148,17 +147,71 @@ namespace gstd {
         // - dùng forward để chỉ cast nếu a, b là rvalue, giữ nguyên tính chất nếu a,b là lvalue (tránh bị move ngoài ý muốn)
         // - ví dụ: pair<std::string, std::string> p("str_a" , "str_b");
         template<typename U1, typename U2>
-        pair(U1&& a, U2&& b) : first(forward<U1>(a)), second(forward<U2>(b)) {}
+        pair(U1&& a, U2&& b) : first(gstd::forward<U1>(a)), second(gstd::forward<U2>(b)) {}
 
-        // defaults
-        pair(const pair&) = default;
-        pair(pair&&) = default;
-        pair& operator=(const pair&) = default;
-        pair& operator=(pair&&) = default;
+        // copy constructor
+        pair(const pair& other) : first(other.first), second(other.second) {}
+
+        // move constructor
+        pair(pair&& other) : first(gstd::move(other.first)), second(gstd::move(other.second)) {}
+
+        // copy assignment
+        pair& operator=(const pair& other) {
+            if (this != &other) {
+                first = other.first;
+                second = other.second;
+            }
+            return *this;
+        }
+
+        // move assignment
+        pair& operator=(pair&& other) {
+            if (this != &other) {
+                first = gstd::move(other.first);
+                second = gstd::move(other.second);
+            }
+            return *this;
+        }
+
+        bool operator==(const pair& other) const {
+            return (first == other.first) && (second == other.second);
+        }
+
+        bool operator>(const pair& other) const {
+            return (first > other.first) || (first == other.first && second > other.second); 
+        }
+
+        bool operator<(const pair& other) const {
+            return (first < other.first) || (first == other.first && second < other.second);
+        }
+
+        bool operator>=(const pair& other) const {
+            return (*this == other) || (*this > other);
+        }
+
+        bool operator<=(const pair& other) const {
+            return (*this == other) || (*this < other);
+        }
+
+        // swap (compiler sẽ tự động tìm ra kiểu dữ liệu T)
+        void swap(pair& other) {
+            gstd::swap(first, other.first);
+            gstd::swap(second, other.second);
+        }
     };
+
+    // =========================================================
+    //  Helper: make_pair
+    // =========================================================
+    template<typename T1, typename T2>
+    pair<remove_reference_t<T1>, remove_reference_t<T2>> make_pair(T1&& a, T2&& b) {
+        return pair<remove_reference_t<T1>, remove_reference_t<T2>>(
+            gstd::forward<T1>(a), gstd::forward<T2>(b)
+        );
+    }
 
     // =========================================================
     // 6. iterator_traits
     // =========================================================
-
+    
 }
